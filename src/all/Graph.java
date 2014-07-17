@@ -1,6 +1,5 @@
 package all;
 
-import javax.rmi.CORBA.Util;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -9,12 +8,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 /**
  * Created by dgoldfarb on 6/1/14.
@@ -23,29 +19,112 @@ public class Graph {
 
     private List<List<Integer>> edges;
     private List<List<Integer>> reverseEdges;
+    private List<List<Integer>> distances;
     private int size;
-    boolean[] explored;
+    private boolean[] explored;
+    private int[] shortestPath;
+    private String[] path;
     private int t;
     private int s;
 
     public Graph() {
         edges = new ArrayList<List<Integer>>();
         reverseEdges = new ArrayList<List<Integer>>();
+        distances = new ArrayList<List<Integer>>();
     }
 
     public static void main(String[] args) throws IOException {
         boolean debug = false;
         Graph graph = new Graph();
 
-        System.out.println("Reading input file");
+        graph.readEdgeAndDistance(args[0]);
+        graph.dijkstra();
 
-        // read the edge list
+        /*
         graph.readEdgeList(args[0], args[1]);
+        graph.connectedComponents();
+        */
 
-        System.out.println("First 8 nodes");
-        graph.printAdjacencyList(0, 8);
+        /*
+        graph.readAdjacencyList(args[0]);
+        int minCut = graph.minCut(debug);
+        */
+    }
 
-        int[][] connected_component = graph.connectedComponents();
+    private void dijkstra() {
+        explored = new boolean[size];
+        shortestPath = new int[size];
+        path = new String[size];
+        explored[0] = true;
+        while (!explored()) {
+            int minScore = Integer.MAX_VALUE;
+            int nodeTail = -1;
+            int nodeHead = -1;
+            for (int i = 0; i < size; i++) {
+                if (explored[i]) {
+                    for (int j = 0; j < edges.get(i).size(); j++) {
+                        if (!explored[edges.get(i).get(j)]) {
+                            if (shortestPath[i] + distances.get(i).get(j) < minScore) {
+                                minScore = shortestPath[i] + distances.get(i).get(j);
+                                nodeTail = i;
+                                nodeHead = edges.get(i).get(j);
+                            }
+                        }
+                    }
+                }
+            }
+            if (nodeHead != -1) {
+                explored[nodeHead] = true;
+                shortestPath[nodeHead] = minScore;
+                path[nodeHead] = new String(path[nodeTail] + Integer.toString(nodeTail));
+            }
+        }
+        int[] solution = new int[]{7,37,59,82,99,115,133,165,188,197};
+        for (Integer i : solution) {
+            System.out.println(shortestPath[i - 1]);
+        }
+    }
+
+    private boolean explored() {
+        for (int i = 0; i < size; i++) {
+            if (!explored[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void readEdgeAndDistance(String fileName) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(new File(fileName)));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            List<Integer> localEdgeList = new ArrayList<Integer>();
+            List<Integer> localDistanceList = new ArrayList<Integer>();
+            String[] bits = line.split("\t");
+            localEdgeList.add(Integer.parseInt(bits[0]) - 1);
+            localDistanceList.add(Integer.parseInt(bits[0]) - 1);
+            for (int i = 1; i < bits.length; i++) {
+                localEdgeList.add(Integer.parseInt(bits[i].split(",")[0]) - 1);
+                localDistanceList.add(Integer.parseInt(bits[i].split(",")[1]));
+            }
+            edges.add(localEdgeList);
+            distances.add(localDistanceList);
+            size = edges.size();
+        }
+    }
+
+    private void connectedComponents() {
+
+        int[] iterOrder = new int[size];
+        for (int i = 0; i < size; i++) {
+            iterOrder[i] = i + 1;
+        }
+        // run DFS_Loop on Grev to find finishing Times
+        int[][] finishingTime = DFS_Loop(reverseEdges, iterOrder);
+
+
+
+        int[][] connected_component =  DFS_Loop(edges, finishingTime[0]);
 
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
         for (int i = 0; i < connected_component[0].length; i++) {
@@ -67,24 +146,6 @@ public class Graph {
         for (int i = 0; i < sorted.size(); i++) {
             System.out.println(sorted.get(i));
         }
-
-        /*
-        graph.readAdjacencyList(args[0]);
-        graph.printAdjacencyList(0, 4);
-        int minCut = graph.minCut(debug);
-        */
-    }
-
-    private int[][] connectedComponents() {
-
-        int[] iterOrder = new int[size];
-        for (int i = 0; i < size; i++) {
-            iterOrder[i] = i + 1;
-        }
-        // run DFS_Loop on Grev to find finishing Times
-        int[][] finishingTime = DFS_Loop(reverseEdges, iterOrder);
-
-        return DFS_Loop(edges, finishingTime[0]);
     }
 
     // DFS_Loop should return an n x 2 array
