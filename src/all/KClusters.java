@@ -54,7 +54,7 @@ public class KClusters {
     public static void main(String[] args) throws IOException {
         KClusters kClusters = new KClusters(args[0]);
         kClusters.run();
-        kClusters.print();
+        // kClusters.print();
     }
 
     private void print() {
