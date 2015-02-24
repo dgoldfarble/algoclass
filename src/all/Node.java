@@ -27,4 +27,6 @@ public class Node {
         }
         return returnEdges;
     }
+
+    public int distance;
 }
