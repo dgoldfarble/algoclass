@@ -19,9 +19,9 @@ public class Node {
     public List<Edge> notExplored() {
         List<Edge> returnEdges = new ArrayList<Edge>();
         for (Edge edge : edges) {
-            if (this == edge.node1 && !edge.node2.explored) {
+            if (this == edge.tail && !edge.head.explored) {
                 returnEdges.add(edge);
-            } else if (!edge.node1.explored) {
+            } else if (!edge.tail.explored) {
                 returnEdges.add(edge);
             }
         }

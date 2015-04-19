@@ -68,14 +68,14 @@ public class KClusters {
             // find closest pair of nodes in a different cluster
             smallest_edge = new Edge(new Node(6), new Node(6), Integer.MAX_VALUE);
             for (Edge edge : edges) {
-                if (clusters[edge.node1.nodeId] != clusters[edge.node2.nodeId]
+                if (clusters[edge.tail.nodeId] != clusters[edge.head.nodeId]
                         && edge.weight < smallest_edge.weight) {
                     smallest_edge = edge;
                 }
             }
             // merge the clusters
-            int cluster1 = clusters[smallest_edge.node1.nodeId];
-            int cluster2 = clusters[smallest_edge.node2.nodeId];
+            int cluster1 = clusters[smallest_edge.tail.nodeId];
+            int cluster2 = clusters[smallest_edge.head.nodeId];
             for (int i = 0; i < num_nodes; i++) {
                 if (clusters[i] == cluster2) {
                     clusters[i] = cluster1;
@@ -85,7 +85,7 @@ public class KClusters {
         }
         int distance = Integer.MAX_VALUE;
         for (Edge edge : edges) {
-            if (clusters[edge.node1.nodeId] != clusters[edge.node2.nodeId]
+            if (clusters[edge.tail.nodeId] != clusters[edge.head.nodeId]
                     && edge.weight < distance) {
                 distance = edge.weight;
             }

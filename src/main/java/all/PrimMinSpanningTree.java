@@ -70,8 +70,8 @@ public class PrimMinSpanningTree {
                 }
             }
             tree.add(bestedge);
-            bestedge.node2.explored = true;
-            bestedge.node1.explored = true;
+            bestedge.head.explored = true;
+            bestedge.tail.explored = true;
         }
         return tree;
     }

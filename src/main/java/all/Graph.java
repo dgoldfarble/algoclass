@@ -9,9 +9,8 @@ public class Graph {
     public List<Edge> edges;
     public List<Node> nodes;
 
-    public Graph(List<Edge> edgeses, List<Node> nodeses) {
+    public Graph(List<Edge> edgeses, List<Node> nodes) {
         this.edges = edgeses;
         this.nodes = nodes;
     }
-
 }
