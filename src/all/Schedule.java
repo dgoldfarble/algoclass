@@ -1,7 +1,5 @@
 package all;
 
-import sun.jvm.hotspot.ci.ciTypeArrayKlass;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -69,7 +67,7 @@ public class Schedule {
 
     ArrayList<Job> tasksAndDiffs;
     int numTasks;
-    public static boolean diff = true;
+    public static boolean diff = false;
 
     public Schedule(String arg) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(new File(arg)));

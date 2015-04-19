@@ -102,7 +102,9 @@ public class BitDistanceNode {
         // if found, consolidate clusters
         int iterations = 0;
         for (ImplicitNode node : nodeList) {
-            System.out.println(iterations);
+            if (iterations % 1000 == 0) {
+                System.out.println(iterations);
+            }
             iterations++;
             int[] original = node.node;
 
