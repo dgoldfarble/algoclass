@@ -42,10 +42,10 @@ public class KClusters {
             int n1 = Integer.parseInt(bits[0]) - 1;
             int n2 = Integer.parseInt(bits[1]) - 1;
             int cost = Integer.parseInt(bits[2]);
-            edge = new Edge(nodes.get(n1), nodes.get(n2), cost);
+            edge = new Edge(nodes.get(n1), nodes.get(n2), cost, false);
             edges.add(edge);
-            nodes.get(n1).edges.add(edge);
-            nodes.get(n2).edges.add(edge);
+            nodes.get(n1).addEdge(edge);
+            nodes.get(n2).addEdge(edge);
         }
 
     }
@@ -66,16 +66,16 @@ public class KClusters {
         Edge smallest_edge;
         while (num_clusters > k) {
             // find closest pair of nodes in a different cluster
-            smallest_edge = new Edge(new Node(6), new Node(6), Integer.MAX_VALUE);
+            smallest_edge = new Edge(new Node(6), new Node(6), Integer.MAX_VALUE, false);
             for (Edge edge : edges) {
-                if (clusters[edge.tail.nodeId] != clusters[edge.head.nodeId]
-                        && edge.weight < smallest_edge.weight) {
+                if (clusters[edge.getTail().getNodeId()] != clusters[edge.getHead().getNodeId()]
+                        && edge.getWeight() < smallest_edge.getWeight()) {
                     smallest_edge = edge;
                 }
             }
             // merge the clusters
-            int cluster1 = clusters[smallest_edge.tail.nodeId];
-            int cluster2 = clusters[smallest_edge.head.nodeId];
+            int cluster1 = clusters[smallest_edge.getTail().getNodeId()];
+            int cluster2 = clusters[smallest_edge.getHead().getNodeId()];
             for (int i = 0; i < num_nodes; i++) {
                 if (clusters[i] == cluster2) {
                     clusters[i] = cluster1;
@@ -85,9 +85,9 @@ public class KClusters {
         }
         int distance = Integer.MAX_VALUE;
         for (Edge edge : edges) {
-            if (clusters[edge.tail.nodeId] != clusters[edge.head.nodeId]
-                    && edge.weight < distance) {
-                distance = edge.weight;
+            if (clusters[edge.getTail().getNodeId()] != clusters[edge.getHead().getNodeId()]
+                    && edge.getWeight() < distance) {
+                distance = edge.getWeight();
             }
         }
         System.out.println(distance);

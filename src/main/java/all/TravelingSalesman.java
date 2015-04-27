@@ -1,16 +1,22 @@
 package all;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import org.apache.commons.math3.util.Combinations;
 
 /**
  * Created by dgoldfarb on 8/9/14.
  */
 public class TravelingSalesman {
+    private final Logger LOG = Logger.getLogger(TravelingSalesman.class);
+
     class Point extends Node {
         float x;
         float y;
@@ -21,18 +27,48 @@ public class TravelingSalesman {
         }
 
         public float distance (Point other) {
-            double x1 = (this.x - other.x) * (this.x - other.x);
-            double x2 = (this.y - other.y) * (this.y - other.y);
+            float x1 = (this.x - other.x) * (this.x - other.x);
+            float x2 = (this.y - other.y) * (this.y - other.y);
             return (float) Math.sqrt(x1 + x2);
+        }
+    }
+
+    class SubsetPlusLastCityKey {
+        Set<Integer> subset;
+        int terminalCity;
+
+        SubsetPlusLastCityKey(Set subset, int terminalCity) {
+            this.subset = subset;
+            this.terminalCity = terminalCity;
+        }
+
+        @Override
+        public int hashCode() {
+            return subset.hashCode() * 31 + terminalCity;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            SubsetPlusLastCityKey that = (SubsetPlusLastCityKey) o;
+            if (that.subset.equals(this.subset) && that.terminalCity == this.terminalCity) {
+                return true;
+            }
+            return false;
         }
     }
 
     int num_nodes;
     List<Point> points;
-    float[][] subproblems;
 
-    List<List<List<Integer>>> bigcombinations;
-    List<List<Integer>> combinations;
+    HashMap<SubsetPlusLastCityKey, Float> prevSubproblems;
+    List<Set> combinationsList;
+    HashMap<SubsetPlusLastCityKey, Float> subproblems;
 
     TravelingSalesman(String arg) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(new File(arg)));
@@ -41,153 +77,93 @@ public class TravelingSalesman {
         points = new ArrayList<Point>();
         int i = 0;
 
-        System.out.println("Reading file " + arg);
+        LOG.info("Reading file " + arg);
         while ((line = reader.readLine()) != null) {
             points.add(new Point(i, Float.parseFloat(line.split(" ")[0]), Float.parseFloat(line.split(" ")[1])));
             i++;
-        }
-        for (i = 0; i < 4; i++) {
-            System.out.println(points.get(i).x + ", " + points.get(i).y);
-        }
-
-        System.out.println("\nInitializing combinations");
-        combinations = new ArrayList<List<Integer>>();
-        for (i = 0; i < num_nodes; i++) {
-            int[] buf = new int[i];
-            System.out.println(i);
-            cmb(0, 0, num_nodes, i, buf);
-        }
-        List<Integer> all = new ArrayList<Integer>();
-        for (i = 0; i < num_nodes; i++) {
-            all.add(i);
-        }
-        combinations.add(all);
-
-        subproblems = new float[combinations.size()][num_nodes];
-        List<Integer> simple_set = new ArrayList<Integer>();
-        simple_set.add(0);
-        for (i = 0; i < combinations.size(); i++) {
-            if (combinations.get(i).equals(simple_set)) {
-                subproblems[i][0] = 0;
-            } else {
-                subproblems[i][0] = Float.MAX_VALUE;
-            }
         }
     }
 
     public static void main(String[] args) throws IOException {
         TravelingSalesman ts = new TravelingSalesman(args[0]);
-
-
+        ts.LOG.setLevel(Level.DEBUG);
         ts.run();
     }
 
     private void run() {
-        // iterate over subproblem size
+        LOG.info("Starting TSP Algorithm");
+
+        // initialize prev stuff
+        prevSubproblems = new HashMap<>();
+        Set<Integer> b = new HashSet<Integer>();
+        b.add(0);
+        prevSubproblems.put(new SubsetPlusLastCityKey(b, 0), (float) 0.0);
+
         for (int subproblem_size = 2; subproblem_size < num_nodes + 1; subproblem_size++) {
-            System.out.println("Starting subproblems size " + subproblem_size);
+            LOG.debug("Generating set size " + subproblem_size);
 
+            // initialize LOCAL variables
+            subproblems = new HashMap<>();
+            combinationsList = new ArrayList<>();
+            Combinations combinationGenerator = new Combinations(num_nodes, subproblem_size);
+            Iterator iterator = combinationGenerator.iterator();
             int i = 0;
-            // iterate over every subset of that size (hard)
-            for (List<Integer> combination : combinations) {
-
-                if (combination.size() == subproblem_size) {
-                    for (int xyz = 0; xyz < num_nodes; xyz++) {
-                        subproblems[i][xyz] = Float.MAX_VALUE;
+            while (iterator.hasNext()) {
+                int[] set = (int[]) iterator.next();
+                // set must contain 0
+                if (set[0] == 0) {
+                    Set<Integer> combinations = new HashSet<>();
+                    for (int i1 : set) {
+                        combinations.add(i1);
                     }
-                    // iterate over every possible final node
-                    for (int xzz = 1; xzz < combination.size(); xzz++) {
-                        int j = combination.get(xzz);
-                        // subproblems[this set][possible final node in this tour]
+                    combinationsList.add(combinations);
+                    i++;
+                }
+            }
 
-                        // equals
-                        // minimum of
-                        // all final nodes of
-                        // this set with the final node removed
-                        List<Integer> matchme = new ArrayList<Integer>();
-                        matchme.addAll(combination);
-                        matchme.remove(xzz);
-                        // plus the cost of the path from that node to this one
-
-
-                        float best_yet = Float.MAX_VALUE;
-                        int index;
-                        for (index = 0; index < combinations.size(); index++) {
-                            if (combinations.get(index).equals(matchme)) {
-                                break;
-                            }
-                        }
-
-                        for (int kzz = 0; kzz < matchme.size(); kzz++) {
-                            if (subproblems[index][kzz] < Float.MAX_VALUE) {
-                                float distance = subproblems[index][kzz] + points.get(j).distance(points.get(matchme.get(kzz)));
-                                if (distance < best_yet) {
-                                    best_yet = distance;
+            LOG.debug("Running subroutine size " + subproblem_size + ", " + combinationsList.size() + " combinations");
+            // for each set at this problem size, iterate through the members
+            // remove the member, then iterate over the remaining members
+            for (Set s : combinationsList) {
+                iterator = s.iterator();
+                int[] temp = new int[s.size()];
+                int index = 0;
+                while (iterator.hasNext()) {
+                    temp[index] = (int) iterator.next();
+                    index++;
+                }
+                for (int potentialDestination : temp) {
+                    if (potentialDestination == 0) {
+                        continue;
+                    } else {
+                        Float best = Float.MAX_VALUE;
+                        s.remove(potentialDestination);
+                        Iterator localIterator = s.iterator();
+                        while (localIterator.hasNext()) {
+                            int k = (int) localIterator.next();
+                            SubsetPlusLastCityKey key = new SubsetPlusLastCityKey(s, k);
+                            if (prevSubproblems.get(key) != null) {
+                                if (prevSubproblems.get(key) + points.get(k).distance(points.get(potentialDestination)) < best) {
+                                    best = prevSubproblems.get(key) + points.get(k).distance(points.get(potentialDestination));
                                 }
                             }
                         }
-                        subproblems[i][xzz] = best_yet;
+                        s.add(potentialDestination);
+                        SubsetPlusLastCityKey key = new SubsetPlusLastCityKey(s, potentialDestination);
+                        subproblems.put(key, best);
                     }
                 }
-                i++;
             }
+            prevSubproblems = subproblems;
         }
-        List<Integer> allOfThem = new ArrayList<Integer>();
-        for (int i = 0; i < num_nodes; i++) {
-            allOfThem.add(i);
-        }
-        int index;
-        for (index = 0; index < combinations.size(); index++) {
-            if (combinations.get(index).equals(allOfThem)) {
-                break;
-            }
-        }
-        float best_yet = Float.MAX_VALUE;
-        for (Integer j : allOfThem) {
-            if (j == 0) {
-                continue;
-            }
-            if (subproblems[index][j] < Float.MAX_VALUE) {
-                float distance = subproblems[index][j] + points.get(j).distance((points.get(0)));
-                if (distance < best_yet) {
-                    best_yet = distance;
-                }
-            }
-        }
-        System.out.println(best_yet);
-    }
 
-
-    void cmb (int depth, int index, int n, int m, int[] buffer) {
-        if (depth > m-1) {
-            List<Integer> combination = new ArrayList<Integer>();
-            long num = 0;
-            for (int j=0; j < m; j++)  {
-                combination.add(buffer[j] - 1);
-                num = num | (1<<(buffer[j]-1));
-            }
-            //combination.add((int) num);
-            if (combination.contains(0)) {
-                combinations.add(combination);
-            }
-            //System.out.println(combination);
-        } else {
-            for (int p=index; p < n-m+1 + depth; p++) {
-                buffer[depth] = p+1;
-                cmb(depth+1, p+1, n, m, buffer);
+        float returnValue = Float.MAX_VALUE;
+        for (int j = 1; j < num_nodes; j++) {
+            SubsetPlusLastCityKey key = new SubsetPlusLastCityKey(combinationsList.get(0), j);
+            if (subproblems.get(key) < returnValue) {
+                returnValue = subproblems.get(key) + points.get(j).distance(points.get(0));
             }
         }
-    }
-
-    int factorial(int j) {
-        int result = 1;
-        for (int k = j; k > 1; k--) {
-            result = result * k;
-        }
-        return result;
-    }
-
-    int combine(int n, int k) {
-        return factorial(n) / (factorial(k) * factorial(n - k));
+        LOG.info(returnValue);
     }
 }

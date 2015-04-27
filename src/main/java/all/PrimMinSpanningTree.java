@@ -35,10 +35,10 @@ public class PrimMinSpanningTree {
             int n1 = Integer.parseInt(bits[0]) - 1;
             int n2 = Integer.parseInt(bits[1]) - 1;
             int cost = Integer.parseInt(bits[2]);
-            edge = new Edge(nodes.get(n1), nodes.get(n2), cost);
+            edge = new Edge(nodes.get(n1), nodes.get(n2), cost, false);
             edges.add(edge);
-            nodes.get(n1).edges.add(edge);
-            nodes.get(n2).edges.add(edge);
+            nodes.get(n1).addEdge(edge);
+            nodes.get(n2).addEdge(edge);
         }
 
     }
@@ -48,37 +48,37 @@ public class PrimMinSpanningTree {
         List<Edge> minSpanningTree = pmst.minSpanningTree();
         int cost = 0;
         for (Edge edge : minSpanningTree) {
-            cost += edge.weight;
+            cost += edge.getWeight();
         }
         System.out.println(cost);
     }
 
     private List<Edge> minSpanningTree() {
         List<Edge> tree = new ArrayList<Edge>();
-        nodes.get(0).explored = true;
+        nodes.get(0).setExplored(true);
         while (!explored()) {
             int lowestCost = Integer.MAX_VALUE;
-            Edge bestedge = new Edge(new Node(-1), new Node(-1), Integer.MAX_VALUE);
+            Edge bestedge = new Edge(new Node(-1), new Node(-1), Integer.MAX_VALUE, false);
             for (Node node : nodes) {
-                if (node.explored) {
-                    for (Edge edge : node.notExplored()) {
-                        if (edge.weight < lowestCost) {
-                            lowestCost = edge.weight;
+                if (node.isExplored()) {
+                    for (Edge edge : node.getUnexploredNeighbors()) {
+                        if (edge.getWeight() < lowestCost) {
+                            lowestCost = edge.getWeight();
                             bestedge = edge;
                         }
                     }
                 }
             }
             tree.add(bestedge);
-            bestedge.head.explored = true;
-            bestedge.tail.explored = true;
+            bestedge.getHead().setExplored(true);
+            bestedge.getTail().setExplored(true);
         }
         return tree;
     }
 
     private boolean explored() {
         for (Node node : nodes) {
-            if (!node.explored) {
+            if (!node.isExplored()) {
                 return false;
             }
         }
