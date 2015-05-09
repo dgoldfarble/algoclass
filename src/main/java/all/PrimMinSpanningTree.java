@@ -40,7 +40,6 @@ public class PrimMinSpanningTree {
             nodes.get(n1).addEdge(edge);
             nodes.get(n2).addEdge(edge);
         }
-
     }
 
     public static void main(String[] args) throws IOException {

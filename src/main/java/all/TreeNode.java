@@ -10,6 +10,9 @@ public class TreeNode {
     private int key;
     private double weight;
 
+    // depth
+    private int height;
+
     TreeNode(int key, double weight) {
         leftChild = null;
         rightChild = null;

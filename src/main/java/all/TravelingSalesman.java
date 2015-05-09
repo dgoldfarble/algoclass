@@ -1,5 +1,6 @@
 package all;
 
+import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -17,11 +18,10 @@ import org.apache.commons.math3.util.Combinations;
 public class TravelingSalesman {
     private final Logger LOG = Logger.getLogger(TravelingSalesman.class);
 
-    class Point extends Node {
+    class Point {
         float x;
         float y;
-        public Point(int i, float x, float y) {
-            super(i);
+        public Point( float x, float y) {
             this.x = x;
             this.y = y;
         }
@@ -33,53 +33,26 @@ public class TravelingSalesman {
         }
     }
 
-    class SubsetPlusLastCityKey {
-        Set<Integer> subset;
-        int terminalCity;
-
-        SubsetPlusLastCityKey(Set subset, int terminalCity) {
-            this.subset = subset;
-            this.terminalCity = terminalCity;
-        }
-
-        @Override
-        public int hashCode() {
-            return subset.hashCode() * 31 + terminalCity;
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            SubsetPlusLastCityKey that = (SubsetPlusLastCityKey) o;
-            if (that.subset.equals(this.subset) && that.terminalCity == this.terminalCity) {
-                return true;
-            }
-            return false;
-        }
-    }
-
     int num_nodes;
-    List<Point> points;
+    Point[] points;
+    Point referencePoint;
 
-    HashMap<SubsetPlusLastCityKey, Float> prevSubproblems;
-    List<Set> combinationsList;
-    HashMap<SubsetPlusLastCityKey, Float> subproblems;
+    float[][] prevSubproblems;
+    int[][] prevInvertedIndex;
+    int[][] invertedIndex;
+    float[][] subproblems;
 
     TravelingSalesman(String arg) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(new File(arg)));
         String line = reader.readLine();
-        num_nodes = Integer.parseInt(line);
-        points = new ArrayList<Point>();
-        int i = 0;
-
+        num_nodes = Integer.parseInt(line) - 1;
+        line = reader.readLine();
+        referencePoint = new Point(Float.parseFloat(line.split(" ")[0]), Float.parseFloat(line.split(" ")[1]));
+        points = new Point[num_nodes];
         LOG.info("Reading file " + arg);
+        int i = 0;
         while ((line = reader.readLine()) != null) {
-            points.add(new Point(i, Float.parseFloat(line.split(" ")[0]), Float.parseFloat(line.split(" ")[1])));
+            points[i] = new Point(Float.parseFloat(line.split(" ")[0]), Float.parseFloat(line.split(" ")[1]));
             i++;
         }
     }
@@ -94,76 +67,74 @@ public class TravelingSalesman {
         LOG.info("Starting TSP Algorithm");
 
         // initialize prev stuff
-        prevSubproblems = new HashMap<>();
-        Set<Integer> b = new HashSet<Integer>();
-        b.add(0);
-        prevSubproblems.put(new SubsetPlusLastCityKey(b, 0), (float) 0.0);
+        prevSubproblems = new float[num_nodes][1];// new HashMap<>();
+        prevInvertedIndex = new int[num_nodes][1];
+        for (int i = 0; i < num_nodes; i++) {
+            prevSubproblems[i][0] = referencePoint.distance(points[i]);
+            prevInvertedIndex[i] = new int[]{i};
+        }
+        Combinations prevCombinations = new Combinations(num_nodes, 1);
+        int combinationIndex;
+        int count;
+        int potentialDestination;
+        int index;
 
         for (int subproblem_size = 2; subproblem_size < num_nodes + 1; subproblem_size++) {
-            LOG.debug("Generating set size " + subproblem_size);
+            LOG.debug("Subproblem size " + subproblem_size);
 
             // initialize LOCAL variables
-            subproblems = new HashMap<>();
-            combinationsList = new ArrayList<>();
+            invertedIndex = new int[(int) CombinatoricsUtils.binomialCoefficient(num_nodes, subproblem_size)][subproblem_size];
+            subproblems = new float[(int) CombinatoricsUtils.binomialCoefficient(num_nodes, subproblem_size)][subproblem_size];
             Combinations combinationGenerator = new Combinations(num_nodes, subproblem_size);
             Iterator iterator = combinationGenerator.iterator();
-            int i = 0;
+            int[] temp = new int[subproblem_size - 1];
             while (iterator.hasNext()) {
                 int[] set = (int[]) iterator.next();
-                // set must contain 0
-                if (set[0] == 0) {
-                    Set<Integer> combinations = new HashSet<>();
-                    for (int i1 : set) {
-                        combinations.add(i1);
-                    }
-                    combinationsList.add(combinations);
-                    i++;
-                }
-            }
+                combinationIndex = getIndex(set, num_nodes);
 
-            LOG.debug("Running subroutine size " + subproblem_size + ", " + combinationsList.size() + " combinations");
-            // for each set at this problem size, iterate through the members
-            // remove the member, then iterate over the remaining members
-            for (Set s : combinationsList) {
-                iterator = s.iterator();
-                int[] temp = new int[s.size()];
-                int index = 0;
-                while (iterator.hasNext()) {
-                    temp[index] = (int) iterator.next();
-                    index++;
-                }
-                for (int potentialDestination : temp) {
-                    if (potentialDestination == 0) {
-                        continue;
-                    } else {
-                        Float best = Float.MAX_VALUE;
-                        s.remove(potentialDestination);
-                        Iterator localIterator = s.iterator();
-                        while (localIterator.hasNext()) {
-                            int k = (int) localIterator.next();
-                            SubsetPlusLastCityKey key = new SubsetPlusLastCityKey(s, k);
-                            if (prevSubproblems.get(key) != null) {
-                                if (prevSubproblems.get(key) + points.get(k).distance(points.get(potentialDestination)) < best) {
-                                    best = prevSubproblems.get(key) + points.get(k).distance(points.get(potentialDestination));
-                                }
-                            }
+                for (count = 0; count < set.length; count++) {
+                    potentialDestination = set[count];
+                    for (int i = 0; i < set.length - 1; i++) {
+                        if (i < count) {
+                            temp[i] = set[i];
+                        } else {
+                            temp[i] = set[i + 1];
                         }
-                        s.add(potentialDestination);
-                        SubsetPlusLastCityKey key = new SubsetPlusLastCityKey(s, potentialDestination);
-                        subproblems.put(key, best);
                     }
+
+                    Float best = Float.MAX_VALUE;
+                    index = getIndex(temp, num_nodes);
+                    float[] smallerSetResults = prevSubproblems[index];
+                    for (int k = 0; k < smallerSetResults.length; k++) {
+                        if (smallerSetResults[k] + points[prevInvertedIndex[index][k]].distance(points[potentialDestination]) < best) {
+                            best = smallerSetResults[k] + points[prevInvertedIndex[index][k]].distance(points[potentialDestination]);
+                        }
+                    }
+                    subproblems[combinationIndex][count] = best;
                 }
+                //
+                invertedIndex[combinationIndex] = set;
             }
             prevSubproblems = subproblems;
+            prevInvertedIndex = invertedIndex;
         }
 
         float returnValue = Float.MAX_VALUE;
-        for (int j = 1; j < num_nodes; j++) {
-            SubsetPlusLastCityKey key = new SubsetPlusLastCityKey(combinationsList.get(0), j);
-            if (subproblems.get(key) < returnValue) {
-                returnValue = subproblems.get(key) + points.get(j).distance(points.get(0));
+        for (int j = 0; j < num_nodes; j++) {
+            if (subproblems[0][j] + points[j].distance(referencePoint) < returnValue) {
+                returnValue = subproblems[0][j] + points[j].distance(referencePoint);
             }
         }
         LOG.info(returnValue);
+    }
+
+    private int getIndex(int[] set, int max_value) {
+        int result = 0;
+        for (int i = 0; i < set.length; i++) {
+            for (int j = i; j < set[i]; j++) {
+                result += CombinatoricsUtils.binomialCoefficient(max_value - j - 2, set.length - i - 1);
+            }
+        }
+        return result;
     }
 }
