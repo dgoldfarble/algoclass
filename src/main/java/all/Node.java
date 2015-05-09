@@ -50,7 +50,13 @@ public class Node {
         return inEdges;
     }
 
-    public Set<Edge> getUnexploredNeighbors() {
+    public List<Edge> getOutgoingEdges() {
+        return outEdges;
+    }
+
+
+
+    public Set<Edge> getEdgesToUnexploredNeighbors() {
         Set<Edge> returnEdges = new HashSet<>();
         for (Edge e : outEdges) {
             if (e.isDirected()) {
@@ -73,5 +79,34 @@ public class Node {
             }
         }
         return returnEdges;
+    }
+
+    public Set<Node> getUnexploredNeighbors() {
+        Set<Node> returnNodes = new HashSet<>();
+        for (Edge e : outEdges) {
+            if (e.isDirected()) {
+                Node v = e.getHead();
+                assert(!v.equals(this));
+                if (!v.isExplored()) {
+                    returnNodes.add(v);
+                }
+            } else {
+                Node v1 = e.getHead();
+                Node v2 = e.getTail();
+                assert(v1.equals(this) || v2.equals(this));
+                if (!v1.equals(this) && !v1.isExplored()) {
+                    returnNodes.add(v1);
+                } else if (!v2.isExplored()) {
+                    returnNodes.add(v2);
+                }
+            }
+        }
+        return returnNodes;
+    }
+
+    public Node copy() {
+        Node node = new Node(this.getNodeId());
+        node.explored = false;
+        return node;
     }
 }

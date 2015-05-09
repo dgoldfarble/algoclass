@@ -30,4 +30,12 @@ public class Edge {
     public int getWeight() {
         return weight;
     }
+
+    public void setHead(Node head) {
+        this.head = head;
+    }
+
+    public void setTail(Node tail) {
+        this.tail = tail;
+    }
 }

@@ -60,7 +60,7 @@ public class PrimMinSpanningTree {
             Edge bestedge = new Edge(new Node(-1), new Node(-1), Integer.MAX_VALUE, false);
             for (Node node : nodes) {
                 if (node.isExplored()) {
-                    for (Edge edge : node.getUnexploredNeighbors()) {
+                    for (Edge edge : node.getEdgesToUnexploredNeighbors()) {
                         if (edge.getWeight() < lowestCost) {
                             lowestCost = edge.getWeight();
                             bestedge = edge;
