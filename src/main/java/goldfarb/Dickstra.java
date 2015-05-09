@@ -1,4 +1,4 @@
-package all;
+package goldfarb;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -37,13 +37,15 @@ public class Dickstra {
         boolean debug = false;
         Dickstra dickstra = new Dickstra();
 
+        /*
         dickstra.readEdgeAndDistance(args[0]);
         dickstra.dijkstra();
+        */
 
-        /*
+
         dickstra.readEdgeList(args[0], args[1]);
         dickstra.connectedComponents();
-        */
+
 
         /*
         dickstra.readAdjacencyList(args[0]);

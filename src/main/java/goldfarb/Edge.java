@@ -1,4 +1,4 @@
-package all;
+package goldfarb;
 
 /**
  * Created by dgoldfarb on 7/16/14.

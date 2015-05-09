@@ -1,10 +1,9 @@
-package all;
+package goldfarb;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 
 /**
  * Created by dgoldfarb on 5/23/14.

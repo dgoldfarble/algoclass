@@ -1,7 +1,5 @@
-package all;
+package goldfarb;
 
-import com.sun.javafx.tools.packager.Log;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedReader;

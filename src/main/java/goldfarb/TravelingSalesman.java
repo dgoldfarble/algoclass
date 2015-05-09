@@ -1,4 +1,4 @@
-package all;
+package goldfarb;
 
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.log4j.Level;

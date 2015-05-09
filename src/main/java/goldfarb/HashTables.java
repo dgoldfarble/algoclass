@@ -1,10 +1,9 @@
-package all;
+package goldfarb;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Hashtable;
 
 /**
  * Created by dgoldfarb on 6/22/14.

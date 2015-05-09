@@ -1,4 +1,4 @@
-package all;
+package goldfarb;
 
 import javafx.util.Pair;
 

@@ -1,4 +1,4 @@
-package all;
+package goldfarb;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -1,4 +1,4 @@
-package all;
+package goldfarb;
 
 
 import java.io.BufferedReader;

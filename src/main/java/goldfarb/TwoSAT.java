@@ -1,4 +1,4 @@
-package all;
+package goldfarb;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -144,11 +144,68 @@ public class TwoSAT {
 
             boolean x1orx2 = generator.nextInt(2) == 1;
             int xToUpdate;
-            // do we really need to look through the entire list?
-            int j = 0;
 
-            Clause clause;
-            if (failure.size() > x.length) {
+            int rand = generator.nextInt(clauses.size());
+            int fail = findNextFail(rand);
+            if (fail != -1) {
+                xToUpdate = (x1orx2 ? clauses.get(fail).x1 : clauses.get(fail).x2);
+                update(xToUpdate);
+            } else {
+                fail = findPrevFail(rand);
+                if (fail != -1) {
+                    xToUpdate = (x1orx2 ? clauses.get(fail).x1 : clauses.get(fail).x2);
+                    update(xToUpdate);
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void update(int xToUpdate) {
+        x[xToUpdate] = !x[xToUpdate];
+        for (Integer i : index.get(xToUpdate)) {
+            clauses.get(i).update();
+        }
+    }
+
+    private int findPrevFail(int rand) {
+        for (int i = rand - 1; i > 0; i--) {
+            if (!clauses.get(i).result) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int findNextFail(int rand) {
+        for (int i = rand; i < clauses.size(); i++) {
+            if (!clauses.get(i).result) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    void dump(int n) {
+        for (int i = 0; i < n; i++) {
+            Clause clause = clauses.get(i);
+            switch (clause.mode) {
+                case 0: LOG.debug(i + ": " + x[clause.x1] + " || " + x[clause.x2] + " = " + clauses.get(i).result);
+                    break;
+                case 1: LOG.debug(i + ": !" + x[clause.x1] + " || " + x[clause.x2] + " = " + clauses.get(i).result);
+                    break;
+                case 2: LOG.debug(i + ": " + x[clause.x1] + " || !" + x[clause.x2] + " = " + clauses.get(i).result);
+                    break;
+                case 3: LOG.debug(i + ": !" + x[clause.x1] + " || !" + x[clause.x2] + " = " + clauses.get(i).result);
+                    break;
+            }
+        }
+    }
+
+    /*
+     if (failure.size() > x.length) {
 
                 while ((clause = clauses.get(generator.nextInt(clauses.size()))).result) {
                     // when this while loop finishes, clause is a random failure case
@@ -196,24 +253,6 @@ public class TwoSAT {
             } else {
                 return true;
             }
-        }
-        return false;
-    }
-
-    void dump(int n) {
-        for (int i = 0; i < n; i++) {
-            Clause clause = clauses.get(i);
-            switch (clause.mode) {
-                case 0: LOG.debug(i + ": " + x[clause.x1] + " || " + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-                case 1: LOG.debug(i + ": !" + x[clause.x1] + " || " + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-                case 2: LOG.debug(i + ": " + x[clause.x1] + " || !" + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-                case 3: LOG.debug(i + ": !" + x[clause.x1] + " || !" + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-            }
-        }
-    }
+     */
 }
 
