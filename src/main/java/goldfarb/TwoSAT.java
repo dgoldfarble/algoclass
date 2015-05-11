@@ -3,256 +3,174 @@ package goldfarb;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 /**
  * Created by dgoldfarb on 5/1/15.
  */
 public class TwoSAT {
-    class Clause {
-        int x1;
-        int x2;
-        boolean result;
-        //
-        final int mode;
-
-        Clause(int x1, int x2, int mode) {
-            this.x1 = x1;
-            this.x2 = x2;
-            this.mode = mode;
-        }
-
-        void update() {
-            if (x1 >= x.length || x2 >= x.length) {
-                result = true;
-            } else {
-                switch (mode) {
-                    case 0:
-                        result = x[x1] || x[x2];
-                        break;
-                    case 1:
-                        result = (!x[x1]) || x[x2];
-                        break;
-                    case 2:
-                        result = x[x1] || (!x[x2]);
-                        break;
-                    case 3:
-                        result = (!x[x1]) || (!x[x2]);
-                }
-            }
-        }
-    }
-    boolean[] x;
-    List<List<Integer>> index;
-    List<Clause> clauses;
-
     private final Logger LOG = Logger.getLogger(TwoSAT.class);
+    Graph graph;
 
-    TwoSAT(String file) throws IOException {
+    public TwoSAT(String file) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(new File(file)));
         String line = reader.readLine();
-        int numClauses;
-        if (line.split(" ").length > 1) {
-            x = new boolean[Integer.parseInt(line.split(" ")[0])];
-            numClauses = Integer.parseInt(line.split(" ")[1]);
-        } else {
-            x = new boolean[Integer.parseInt(line)];
-            numClauses = x.length;
-        }
-        index = new ArrayList<>();
-        for (int i = 0; i < x.length; i++) {
-            index.add(new ArrayList<Integer>());
+        int numEdges = 2 * Integer.parseInt(line.split(" ")[0]);
+        int numNodes = numEdges;
+        // (1, -8) pair will give you edges (-1 => -8) and (8 => 1)
+
+        List<Node> nodes = new ArrayList<>();
+        for (int i = 0; i < numNodes; i++) {
+            Node node = new Node(i);
+            nodes.add(node);
         }
 
-        clauses = new ArrayList<>();
-        for (int i = 0; i < numClauses; i++) {
-            line = reader.readLine();
+        List<Edge> edges = new ArrayList<>();
+        while ((line = reader.readLine()) != null){
             int x1 = Integer.parseInt(line.split(" ")[0]);
             int x2 = Integer.parseInt(line.split(" ")[1]);
-            int mode;
-            if (x1 > 0 && x2 > 0) {
-                mode = 0;
+            int max = Math.max(Math.abs(x1) * 2, Math.abs(x2) * 2);
+            if (max > nodes.size()) {
+                for (int i = nodes.size(); i < max; i++) {
+                    Node node = new Node(i);
+                    nodes.add(node);
+                }
+            }
+
+
+            Node nx1;
+            Node nx2;
+            Node notX1;
+            Node notX2;
+            if (x1 < 0 && x2 < 0) {
+                x1 = Math.abs(x1) * 2 - 1;
+                x2 = Math.abs(x2) * 2 - 1;
+                nx1 = nodes.get(x1 - 1);
+                notX1 = nodes.get(x1);
+                nx2 = nodes.get(x2 - 1);
+                notX2 = nodes.get(x2);
+                Edge edge = new Edge(nx1, notX2, 1, true);
+                Edge edge1 = new Edge(nx2, notX1, 1, true);
+                edges.add(edge);
+                edges.add(edge1);
+                nx1.addOutgoingEdge(edge);
+                notX2.addIncomingEdge(edge);
+                nx2.addOutgoingEdge(edge1);
+                notX1.addIncomingEdge(edge1);
             } else if (x1 < 0 && x2 > 0) {
-                mode = 1;
+                x1 = Math.abs(x1) * 2 - 1;
+                x2 = (x2 - 1) * 2;
+                nx1 = nodes.get(x1 - 1);
+                notX1 = nodes.get(x1);
+                nx2 = nodes.get(x2);
+                notX2 = nodes.get(x2 + 1);
+                Edge edge = new Edge(nx1, nx2, 1, true);
+                Edge edge1 = new Edge(notX2, notX1, 1, true);
+                edges.add(edge);
+                edges.add(edge1);
+                nx1.addOutgoingEdge(edge);
+                nx2.addIncomingEdge(edge);
+                notX2.addOutgoingEdge(edge1);
+                notX1.addIncomingEdge(edge1);
             } else if (x1 > 0 && x2 < 0) {
-                mode = 2;
+                x1 = (x1 - 1) * 2;
+                x2 = Math.abs(x2) * 2 - 1;
+                nx1 = nodes.get(x1);
+                notX1 = nodes.get(x1 + 1);
+                nx2 = nodes.get(x2 - 1);
+                notX2 = nodes.get(x2);
+                Edge edge = new Edge(notX1, notX2, 1, true);
+                Edge edge1 = new Edge(nx2, nx1, 1, true);
+                edges.add(edge);
+                edges.add(edge1);
+                notX1.addOutgoingEdge(edge);
+                notX2.addIncomingEdge(edge);
+                nx2.addOutgoingEdge(edge1);
+                nx1.addIncomingEdge(edge1);
             } else {
-                mode = 3;
-            }
-            x1 = Math.abs(x1) - 1;
-            x2 = Math.abs(x2) - 1;
-            clauses.add(new Clause(x1, x2, mode));
-            clauses.get(i).update();
-            if (x1 < x.length) {
-                index.get(x1).add(i);
-            }
-            if (x2 < x.length) {
-                index.get(x2).add(i);
+                x1 = (x1 - 1) * 2;
+                x2 = (x2 - 1) * 2;
+                nx1 = nodes.get(x1);
+                notX1 = nodes.get(x1 + 1);
+                nx2 = nodes.get(x2);
+                notX2 = nodes.get(x2 + 1);
+                Edge edge = new Edge(notX1, nx2, 1, true);
+                Edge edge1 = new Edge(notX2, nx1, 1, true);
+                edges.add(edge);
+                edges.add(edge1);
+                notX1.addOutgoingEdge(edge);
+                nx2.addIncomingEdge(edge);
+                notX2.addOutgoingEdge(edge1);
+                nx1.addIncomingEdge(edge1);
             }
         }
+
+        this.graph = new Graph(edges, nodes);
+    }
+
+    public TwoSAT() {
+
+    }
+
+    public void setGraph(Graph g) {
+        this.graph = g;
     }
 
     public static void main(String[] args) throws IOException {
         for (int i = 0; i < args.length; i++) {
             TwoSAT sat = new TwoSAT(args[i]);
-            sat.LOG.setLevel(Level.DEBUG);
             sat.run();
         }
     }
 
-    private void run() {
-        boolean satisfiable = false;
-        int limit = (int) Math.floor(Math.log(x.length) / Math.log(2));
-        for (int i = 0; i < limit; i++) {
-            LOG.debug("outer loop " + i + " / " + limit);
-            if (subroutine()) {
-                satisfiable = true;
-                break;
-            }
-        }
-        LOG.info("Satisfiable: " + satisfiable);
-    }
-
-    boolean subroutine() {
-        Random generator = new Random();
-
-        Set<Integer> failure = new HashSet<>();
-        // initialize random assignment
-        LOG.debug("randomizing");
-        for (int i = 0; i < x.length; i++) {
-            boolean y = Math.random() < 0.5;
-            if (x[i] != y) {
-                x[i] = y;
-                for (int j : index.get(i)) {
-                    clauses.get(j).update();
-                }
-            }
-        }
-        for (int i = 0; i < x.length; i++) {
-            if (!clauses.get(i).result) {
-                failure.add(i);
-            }
-        }
-        LOG.debug("randomized");
-        // at first, just select random numbers and check if they're false
-        for (long i = 0; i < x.length; i++) {
-            // LOG.debug("failures: " + failure.size());
-
-            boolean x1orx2 = generator.nextInt(2) == 1;
-            int xToUpdate;
-
-            int rand = generator.nextInt(clauses.size());
-            int fail = findNextFail(rand);
-            if (fail != -1) {
-                xToUpdate = (x1orx2 ? clauses.get(fail).x1 : clauses.get(fail).x2);
-                update(xToUpdate);
-            } else {
-                fail = findPrevFail(rand);
-                if (fail != -1) {
-                    xToUpdate = (x1orx2 ? clauses.get(fail).x1 : clauses.get(fail).x2);
-                    update(xToUpdate);
-                } else {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private void update(int xToUpdate) {
-        x[xToUpdate] = !x[xToUpdate];
-        for (Integer i : index.get(xToUpdate)) {
-            clauses.get(i).update();
-        }
-    }
-
-    private int findPrevFail(int rand) {
-        for (int i = rand - 1; i > 0; i--) {
-            if (!clauses.get(i).result) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private int findNextFail(int rand) {
-        for (int i = rand; i < clauses.size(); i++) {
-            if (!clauses.get(i).result) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    void dump(int n) {
-        for (int i = 0; i < n; i++) {
-            Clause clause = clauses.get(i);
-            switch (clause.mode) {
-                case 0: LOG.debug(i + ": " + x[clause.x1] + " || " + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-                case 1: LOG.debug(i + ": !" + x[clause.x1] + " || " + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-                case 2: LOG.debug(i + ": " + x[clause.x1] + " || !" + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-                case 3: LOG.debug(i + ": !" + x[clause.x1] + " || !" + x[clause.x2] + " = " + clauses.get(i).result);
-                    break;
-            }
-        }
-    }
-
     /*
-     if (failure.size() > x.length) {
+    private void preproccess() {
+        List<Integer> removed = new ArrayList<>();
+        for (Clause clause : clauses) {
+            List<Integer> contradictx1 = index.get(clause.x1);
+            List<Integer> contradictx2 = index.get(clause.x2);
+            if (index.get(clause.x1).size() == 1
+                    && index.get(clause.x2).size() == 1) {
 
-                while ((clause = clauses.get(generator.nextInt(clauses.size()))).result) {
-                    // when this while loop finishes, clause is a random failure case
-                }
-                if (x1orx2) {
-                    xToUpdate = clause.x1;
-                } else {
-                    xToUpdate = clause.x2;
-                }
-
-                x[xToUpdate] = !x[xToUpdate];
-                for (int k : index.get(xToUpdate)) {
-                    clauses.get(k).update();
-                    if (clauses.get(k).result) {
-                        failure.remove(k);
-                    } else {
-                        failure.add(k);
-                    }
-                }
             }
-            else if (failure.size() > 0) {
+        }
+    }*/
 
-                // This is a terrible, terrible, ugly way to get a random result
-                Iterator iterator = failure.iterator();
-                int max = generator.nextInt(failure.size()) - 1;
-                for (int k = 0; k < max; k++) {
-                    iterator.next();
-                }
-                clause = clauses.get((int) iterator.next());
-                if (x1orx2) {
-                    xToUpdate = clause.x1;
-                } else {
-                    xToUpdate = clause.x2;
-                }
+    public boolean run() {
+        int[][] comps = graph.connectedGroups();
+        // List<Integer> connected = graph.connectedComponents();
+        for (int i = 0; i < comps[0].length; i = i + 2) {
+            if (comps[1][i] == comps[1][i + 1]) {
+                LOG.info("Unsatisfiable");
+                return false;
+            }
+        }
+        LOG.info("Satisfiable");
+        return true;
+    }
 
-                x[xToUpdate] = !x[xToUpdate];
-                for (int k : index.get(xToUpdate)) {
-                    clauses.get(k).update();
-                    if (clauses.get(k).result) {
-                        failure.remove(k);
-                    } else {
-                        failure.add(k);
-                    }
-                }
+    public void dumpGraph(File outfile) throws FileNotFoundException, UnsupportedEncodingException {
+        PrintWriter writer = new PrintWriter(outfile, "UTF-8");
+        writer.println(graph.nodes.size() + " " + graph.edges.size());
+        for (Edge edge : graph.edges) {
+            Node n1 = edge.getTail();
+            Node n2 = edge.getHead();
+            int x1;
+            int x2;
+            if (n1.getNodeId() % 2 == 0) {
+                x1 = n1.getNodeId() / 2;
             } else {
-                return true;
+                x1 = -1 * (n1.getNodeId() - 1) / 2;
             }
-     */
+            if (n2.getNodeId() % 2 == 0) {
+                x2 = n2.getNodeId() / 2;
+            } else {
+                x2 = -1 * (n2.getNodeId() - 1) / 2;
+            }
+            writer.println((n1.getNodeId() + 1) + " " + (n2.getNodeId() + 1));
+        }
+        writer.close();
+    }
 }
 

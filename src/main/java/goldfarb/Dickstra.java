@@ -115,7 +115,7 @@ public class Dickstra {
         }
     }
 
-    private void connectedComponents() {
+    public void connectedComponents() {
 
         int[] iterOrder = new int[size];
         for (int i = 0; i < size; i++) {
@@ -123,8 +123,6 @@ public class Dickstra {
         }
         // run DFS_Loop on Grev to find finishing Times
         int[][] finishingTime = DFS_Loop(reverseEdges, iterOrder);
-
-
 
         int[][] connected_component =  DFS_Loop(edges, finishingTime[0]);
 
@@ -182,7 +180,7 @@ public class Dickstra {
         finishingTimes_connectedComponents[0][t - 1] = i;
     }
 
-    private void readEdgeList(String fileName, String numberOfVertices) throws IOException {
+    public void readEdgeList(String fileName, String numberOfVertices) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(new File(fileName)));
 
         size = Integer.parseInt(numberOfVertices);

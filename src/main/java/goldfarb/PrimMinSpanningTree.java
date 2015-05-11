@@ -37,8 +37,6 @@ public class PrimMinSpanningTree {
             int cost = Integer.parseInt(bits[2]);
             edge = new Edge(nodes.get(n1), nodes.get(n2), cost, false);
             edges.add(edge);
-            nodes.get(n1).addEdge(edge);
-            nodes.get(n2).addEdge(edge);
         }
     }
 

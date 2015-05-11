@@ -13,6 +13,13 @@ public class Edge {
         this.head = head;
         this.weight = weight;
         this.directed = directed;
+        if (directed) {
+            tail.addOutgoingEdge(this);
+            head.addIncomingEdge(this);
+        } else {
+            tail.addEdge(this);
+            head.addEdge(this);
+        }
     }
 
     public Node getHead() {

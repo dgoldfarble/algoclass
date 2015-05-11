@@ -4,8 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by dgoldfarb on 8/9/14.
@@ -55,8 +54,6 @@ public class Graph {
             }
             edge = new Edge(nodes.get(n1), nodes.get(n2), cost, false);
             edges.add(edge);
-            nodes.get(n1).addEdge(edge);
-            nodes.get(n2).addEdge(edge);
         }
     }
 
@@ -115,8 +112,10 @@ public class Graph {
 
     public void reverse() {
         for (Node node : nodes) {
-            List<Edge> incomingEdges = node.getIncomingEdges();
-            List<Edge> outgoingEdges = node.getOutgoingEdges();
+            List<Edge> inEdges = node.getIncomingEdges();
+            List<Edge> outEdges = node.getOutgoingEdges();
+            node.setIncomingEdges(outEdges);
+            node.setOutgoingEdges(inEdges);
         }
         for (Edge edge : edges) {
             Node head = edge.getHead();
@@ -126,10 +125,134 @@ public class Graph {
         }
     }
 
-    public void DFS(Node source) {
+    public void DFS(Node source, boolean reverse) {
+        LinkedList<Node> q = new LinkedList<>();
+        q.add(0, source);
+        while (q.size() > 0) {
+            Node v = q.remove(0);
+            v.setExplored(true);
+            if (reverse) {
+                for (Edge e : v.getIncomingEdges()) {
+                    if (!e.getTail().isExplored()) {
+                        q.add(0, e.getTail());
+                    }
+                }
+            } else {
+                for (Edge e : v.getOutgoingEdges()) {
+                    if (!e.getHead().isExplored()) {
+                        q.add(0, e.getHead());
+                    }
+                }
+            }
+        }
+    }
+
+    public void DFS(Node source, boolean reverse, int leader, int[][] finishConnected, int[] t) {
         source.setExplored(true);
-        for (Node destination : source.getUnexploredNeighbors()) {
-            DFS(destination);
+        finishConnected[1][source.getNodeId()] = leader;
+
+
+        if (reverse) {
+            for (Edge edge : source.getIncomingEdges()) {
+                Node node = edge.getTail();
+                if (!node.isExplored()) {
+                    DFS(node, reverse, leader, finishConnected, t);
+                }
+            }
+        } else {
+            for (Edge edge : source.getOutgoingEdges()) {
+                Node node = edge.getHead();
+                if (!node.isExplored()) {
+                    DFS(node, reverse, leader, finishConnected, t);
+                }
+            }
+        }
+
+        finishConnected[0][t[0]] = source.getNodeId();
+        t[0]++;
+    }
+
+    public int[][] DFS_Loop(Graph g, int[] order, boolean reverse) {
+        int[] t = new int[]{0};
+        int[][] finishingTimes = new int[2][g.nodes.size()];
+        for (int iter = g.nodes.size() - 1; iter >= 0; iter--) {
+            int i = order[iter];
+            if (!g.nodes.get(i).isExplored()) {
+                DFS(g.nodes.get(i), reverse, i, finishingTimes, t);
+            }
+        }
+
+        return finishingTimes;
+    }
+
+    public int[][] connectedGroups() {
+        int[] iterOrder = new int[nodes.size()];
+        for (int i = 0; i < nodes.size(); i++) {
+            iterOrder[i] = i;
+        }
+        int[][] finishingTime = DFS_Loop(this, iterOrder, true);
+
+        for (int i = 0; i < nodes.size(); i++) {
+            nodes.get(i).setExplored(false);
+        }
+        int[][] connectedComponent = DFS_Loop(this, finishingTime[0], false);
+
+        return connectedComponent;
+    }
+
+    public List<Integer> connectedComponents() {
+        int[][] connectedComponent = connectedGroups();
+
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for (int i = 0; i < connectedComponent[0].length; i++) {
+            int component = connectedComponent[1][i];
+            if (map.get(component) != null) {
+                map.put(component, map.get(component) + 1);
+            } else {
+                map.put(component, 1);
+            }
+        }
+
+        Collection<Integer> unsorted = map.values();
+        List<Integer> sorted = new ArrayList<Integer>();
+        for (Integer blah : unsorted) {
+            sorted.add(blah);
+        }
+        Collections.sort(sorted);
+
+        return sorted;
+    }
+
+    public void readAdjacencyList(File file, boolean directed) throws IOException {
+        List<Node> nodes = new ArrayList<>();
+        List<Edge> edges = new ArrayList<>();
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        int counter = 0;
+        while ((line = reader.readLine()) != null) {
+            int node1 = Integer.parseInt(line.split(" ")[0]);
+            int node2 = Integer.parseInt(line.split(" ")[1]);
+            int max = Math.max(node1, node2);
+            if (max > nodes.size()) {
+                counter = nodes.size();
+                for (int i = counter; i < max; i++) {
+                    Node node = new Node(i);
+                    nodes.add(node);
+                }
+            }
+            Node n1 = nodes.get(node1 - 1);
+            Node n2 = nodes.get(node2 - 1);
+            Edge edge = new Edge(n1, n2, 1, directed);
+            edges.add(edge);
+            if (directed) {
+                n1.addOutgoingEdge(edge);
+                n2.addIncomingEdge(edge);
+            } else {
+                n1.addEdge(edge);
+                n2.addEdge(edge);
+            }
+            this.nodes = nodes;
+            this.edges = edges;
         }
     }
 }
